@@ -1,5 +1,6 @@
 package com.example.words;
 
+import android.content.Context;
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
@@ -7,12 +8,18 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.SavedStateViewModelFactory;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
+import androidx.navigation.ui.NavigationUI;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.List;
 
@@ -26,6 +33,9 @@ public class WordsFragement extends Fragment {
     private RecyclerView recyclerView;
     private MyAdapter myAdapter1,myAdapter2;
 
+    private FloatingActionButton floatingActionButton;
+
+    private InputMethodManager inputMethodManager;
     public WordsFragement() {
         // Required empty public constructor
     }
@@ -48,6 +58,9 @@ public class WordsFragement extends Fragment {
         myAdapter1 = new MyAdapter(false,wordViewModel);
         myAdapter2 = new MyAdapter(true,wordViewModel);
         recyclerView.setAdapter(myAdapter1); // 默认是适配器1
+
+        floatingActionButton = requireActivity().findViewById(R.id.floatingActionButton);
+
         wordViewModel.getAllWordsLive().observe(requireActivity(), new Observer<List<Word>>() {
             @Override
             public void onChanged(List<Word> words) {
@@ -60,5 +73,20 @@ public class WordsFragement extends Fragment {
                 }
             }
         });
+
+        floatingActionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                NavController navController = Navigation.findNavController(view);
+                navController.navigate(R.id.action_wordsFragement_to_addFragment);
+            }
+        });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        inputMethodManager = (InputMethodManager) requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+        inputMethodManager.hideSoftInputFromWindow(getView().getWindowToken(),0);
     }
 }

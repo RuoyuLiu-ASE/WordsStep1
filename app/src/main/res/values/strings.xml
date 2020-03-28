@@ -3,4 +3,8 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="add_a_word">Add a word</string>
+    <string name="English_Word">English word</string>
+    <string name="Chinese_Word">Chinese Meaning</string>
+    <string name="button_submit">Submit</string>
 </resources>

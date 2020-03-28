@@ -8,8 +8,8 @@
     <fragment
         android:id="@+id/wordsFragement"
         android:name="com.example.words.WordsFragement"
-        android:label="fragment_words_fragement"
-        tools:layout="@layout/fragment_words_fragement" >
+        android:label="Words"
+        tools:layout="@layout/fragment_words_fragement">
         <action
             android:id="@+id/action_wordsFragement_to_addFragment"
             app:destination="@id/addFragment"
@@ -18,6 +18,6 @@
     <fragment
         android:id="@+id/addFragment"
         android:name="com.example.words.AddFragment"
-        android:label="fragment_add"
+        android:label="Add"
         tools:layout="@layout/fragment_add" />
 </navigation>
