@@ -7,4 +7,8 @@
     <string name="English_Word">English word</string>
     <string name="Chinese_Word">Chinese Meaning</string>
     <string name="button_submit">Submit</string>
+    <string name="clear_data_item">Clear data</string>
+    <string name="switch_view">Switch view</string>
+    <string name="search">Search</string>
+    <string name="Is_using_card_view">IS USING CARD VIEW</string>
 </resources>
