@@ -5,6 +5,14 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.SearchView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,39 +23,33 @@ import androidx.lifecycle.SavedStateViewModelFactory;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
-import androidx.navigation.ui.NavigationUI;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
-import android.widget.SearchView;
-
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class WordsFragement extends Fragment {
+    private List<Word> allWords = new ArrayList<>();
 
+    private DividerItemDecoration dividerItemDecoration;
     private static final String VIEW_TYPE_SHP = "view_type_shp"; //sharedpreference 的文件名
     private static final String IS_USING_CARD_VIEW = "Is_using _card_view";
 
     private WordViewModel wordViewModel;
     private RecyclerView recyclerView;
     private MyAdapter myAdapter1,myAdapter2;
-
-    private FloatingActionButton floatingActionButton;
-
-    private InputMethodManager inputMethodManager;
 
     private LiveData<List<Word>> filteredWords;
     public WordsFragement() {
@@ -78,11 +80,15 @@ public class WordsFragement extends Fragment {
                     @Override
                     public void onChanged(List<Word> words) {
                         int temp = myAdapter1.getItemCount();
-                        myAdapter1.setAllWords(words);
-                        myAdapter2.setAllWords(words);
+                        allWords = words;
+//                        myAdapter1.setAllWords(words);
+//                        myAdapter2.setAllWords(words);
                         if (temp != words.size()) {
-                            myAdapter1.notifyDataSetChanged();
-                            myAdapter2.notifyDataSetChanged();
+//                            myAdapter1.notifyDataSetChanged();
+//                            myAdapter2.notifyDataSetChanged();
+                            myAdapter1.submitList(words);
+                            myAdapter2.submitList(words);
+                            recyclerView.smoothScrollBy(0,-200);
                         }
                     }
                 });
@@ -121,9 +127,11 @@ public class WordsFragement extends Fragment {
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 if (viewType) {
                     recyclerView.setAdapter(myAdapter1);
+                    recyclerView.addItemDecoration(dividerItemDecoration);
                     editor.putBoolean(IS_USING_CARD_VIEW,false); //将卡片视图切换为正常视图后，也得把viewType切换为false，表明不再是card view
                 }else{
                     recyclerView.setAdapter(myAdapter2);
+                    recyclerView.removeItemDecoration(dividerItemDecoration);
                     editor.putBoolean(IS_USING_CARD_VIEW,true);
                 }
                 editor.apply();
@@ -147,31 +155,78 @@ public class WordsFragement extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(requireActivity()));
         myAdapter1 = new MyAdapter(false,wordViewModel);
         myAdapter2 = new MyAdapter(true,wordViewModel);
+        recyclerView.setItemAnimator(new DefaultItemAnimator(){
+            @Override
+            public void onAnimationFinished(@NonNull RecyclerView.ViewHolder viewHolder) {
+                super.onAnimationFinished(viewHolder);
+                LinearLayoutManager linearLayoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                if (linearLayoutManager != null) {
+                    int firstPos = linearLayoutManager.findFirstVisibleItemPosition();
+                    int lastPos = linearLayoutManager.findLastVisibleItemPosition();
+                    for (int i = firstPos; i <= lastPos; i++) {
+                        MyAdapter.MyViewHolder holder = (MyAdapter.MyViewHolder) recyclerView.findViewHolderForAdapterPosition(i);
+                        if (holder != null) {
+                            holder.textViewNumber.setText(String.valueOf(i+1));
+                        }
+                    }
+                }
+            }
+        });
         //recyclerView.setAdapter(myAdapter1); // 默认是适配器1
         //修改上面的默认，修改为：根据viewType来确定一开始进来是哪一种视图的适配器
         SharedPreferences sharedPreferences = requireActivity().getSharedPreferences(VIEW_TYPE_SHP, Context.MODE_PRIVATE);
         boolean viewType = sharedPreferences.getBoolean(IS_USING_CARD_VIEW,false);
+
+        dividerItemDecoration = new DividerItemDecoration(requireActivity(),DividerItemDecoration.VERTICAL);
+
         if (viewType) {
             recyclerView.setAdapter(myAdapter2);
         }else {
             recyclerView.setAdapter(myAdapter1);
+            recyclerView.addItemDecoration(dividerItemDecoration);
         }
 
-        floatingActionButton = requireActivity().findViewById(R.id.floatingActionButton);
+        FloatingActionButton floatingActionButton = requireActivity().findViewById(R.id.floatingActionButton);
         filteredWords = wordViewModel.getAllWordsLive(); //初始化 filteredwords
 
         wordViewModel.getAllWordsLive().observe(requireActivity(), new Observer<List<Word>>() {
             @Override
             public void onChanged(List<Word> words) {
                 int temp = myAdapter1.getItemCount();    //获取适配器有多少个子项
-                myAdapter1.setAllWords(words);
-                myAdapter2.setAllWords(words);
+                allWords = words;
+//                myAdapter1.setAllWords(words);
+//                myAdapter2.setAllWords(words);
                 if (temp != words.size()) {
-                    myAdapter1.notifyDataSetChanged();
-                    myAdapter2.notifyDataSetChanged();
+                    myAdapter1.submitList(words);
+                    myAdapter2.submitList(words);
+                    recyclerView.smoothScrollBy(0,-200);
+//                    myAdapter1.notifyDataSetChanged();
+//                    myAdapter2.notifyDataSetChanged();
                 }
             }
         });
+
+        //不支持拖动，所以是0
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0,ItemTouchHelper.START | ItemTouchHelper.END) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                final Word wordToDelete = allWords.get(viewHolder.getAdapterPosition());
+                wordViewModel.deleteWords(wordToDelete);
+                Snackbar.make(requireActivity().findViewById(R.id.wordsFragmentView),"删除了一个词汇",Snackbar.LENGTH_SHORT)
+                        .setAction("撤销", new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                wordViewModel.insertWords(wordToDelete);
+                            }
+                        })
+                        .show();
+            }
+        }).attachToRecyclerView(recyclerView);
 
         floatingActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -185,7 +240,7 @@ public class WordsFragement extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        inputMethodManager = (InputMethodManager) requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-        inputMethodManager.hideSoftInputFromWindow(getView().getWindowToken(),0);
+        InputMethodManager inputMethodManager = (InputMethodManager) requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+        inputMethodManager.hideSoftInputFromWindow(Objects.requireNonNull(getView()).getWindowToken(),0);
     }
 }
